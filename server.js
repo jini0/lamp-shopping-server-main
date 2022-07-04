@@ -1,3 +1,4 @@
+// https://github.com/design-view/lamp-shopping-server : 선생님 깃허브(lamp-server)
 // 클라이언트가 데이터 요청이 오면 그걸 전달하는 역할이 API 서버의 역할임!!
 const express = require("express");
 const cors = require("cors");
@@ -192,19 +193,20 @@ app.post("/products",(req,res)=>{
     // *post로 전송하면 body에 담김 
     const body = req.body;
     //body객체에 있는 값을 각각 변수에 할당
-    const { name, price, seller, imageUrl} = body;
-    if(!name || !price || !seller) {
+    const { name, price, seller, imageUrl, description } = body;
+    if(!name || !price || !seller ) {
         res.send("모든 필드를 입력해주세요");
     }
     //모든 입력값이 있으면
     //Product테이블에 레코드를 삽입
-    //데이터베이스 우린 models를 썼음
-    //create문 --> mysql로 생각하면 insert문임!
+    // - 데이터베이스 우린 models를 썼음
+    // - create문 --> mysql로 생각하면 insert문임!(query날려주는거랑 똑같구나!!)
     models.Product.create({
         name,
         price,
         seller,
-        imageUrl
+        imageUrl,
+        description
     }).then(result=>{
         console.log("상품 생성 결과 : ", result);
         res.send({
@@ -238,6 +240,15 @@ app.post("/products",(req,res)=>{
 //     console.log(req);
 //     res.send('그린 게시판에 게시글이 등록되었습니다.');
 // });
+
+//✔7.4 delete 전송
+//delete 삭제하기 (삭제하기 버튼 클릭시 삭제) -axios로 delete 전송한거!(post get 말고)
+//cf. https://baeharam.netlify.app/posts/Node.js/Node.js-Sequelize-다루기       : 블로그 참고하기!
+app.delete('/product/:id', async (req, res) => {
+    const params = req.params;
+    models.Product.destroy({ where: { id: params.id }})
+    .then( res.send("상품이 삭제되었습니다."));
+})
 
 //🖤실행
 app.listen(port, ()=>{

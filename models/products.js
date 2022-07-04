@@ -1,3 +1,4 @@
+//products.js -> table 만들거!
 //7.1
 //Common.js 구문 : 내보내기 할 때 씀
 //module.exports
@@ -25,6 +26,10 @@ module.exports = function (sequelize, DataTypes){
             type: DataTypes.STRING(200),
             allowNull: false
         },
+        description: {                      //7.4 테이블 컬럼 하나 더 추가 
+            type: DataTypes.STRING(500),
+            allowNull: false                //false -> not null을 허용하지 않겠다!
+        }
     });
     return product;
 }
