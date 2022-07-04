@@ -10,10 +10,63 @@ const models = require('./models');
 app.use(express.json());
 //브라우저 cors이슈를 막기위해 사용(모든 브라우저의 요청을 일정하게 받겠다)
 app.use(cors());
+//7.4 upload 폴더에 있는 파일에 접근할 수 있도록 설정(서버에 있는 파일을 다른 곳에서도 쓸 수 있도록 해줌 -> 이거 해줘야 상품등록시 사진의 이미지 불러와짐!(upload폴더의 사진들 이용가능))
+app.use("/upload",express.static("upload"));
+
+// 💛7.4
+// 업로드 이미지를 관리하는 스토리지 서버를 연결 -> 멀터를 사용하겠다.
+const multer = require("multer");
+const { diskStorage } = require("multer");
+// 이미지 파일이 요청오면 어디에 저장할건지 지정
+const upload = multer({ 
+    // dest: 'upload/'
+    // ✔ 이미지 이름이 이상하게 변경되어 저장돼서 -> 이미지 이름을 원래 이름으로 지정해주고자함
+    storage: multer.diskStorage({           //diskStorage() : 지정을 해주겠다 라는 메서드
+        destination: function(req, file, cb){
+            //cb: callback함수
+            //어디에 저장할거냐? upload/
+            cb(null, 'upload/')
+        },
+        filename: function(req, file, cb){
+            //어떤 이름으로 저장할거야?
+            //file객체의 오리지널 이름으로 저장하겠다
+            cb(null, file.originalname)
+        }
+    })
+})
 
 //🖤요청처리
 //app.메서드(url, 함수)
                 //callback함수
+// 💛7.4
+//✔post전송방식
+// 이미지파일을 post로 요청이 왔을 때 upload라는 폴더에 이미지를 저장하기
+// 이미지가 하나일 때 single
+app.post('/image', upload.single('image'), (req, res)=>{
+                                // image key이름 
+    const file = req.file;
+    console.log(file);
+    res.send({
+        // imageUrl: file.path
+        //이미지 경로 수정!
+        imageUrl: "http://localhost:3000/"+file.destination+file.filename   
+    })
+})
+// 테스트 해보기(7.4 사진참고) - postman에서 POST  http://localhost:3000/image 경로를 변경함(app.post의 경로인 '/image'!!!!)을 뒤에 적어준거
+// Body - form-data 클릭 - key이름을 image로 지정 / key값의 Text를 file로 변경해주기!(오른쪽에 회색글자) -> value에는 이미지 파일 product이미지 선택(product2.jpg)했음 -> send
+// 하면 밑에 결과창 + 터미널에
+//{
+//     "imageUrl": "upload\\4c608804de83a0b776defad677d2c31c"           //이미지 이름이 이상하게 뜸 -> 이걸 보기 편하게 원래이름으로 해줄거임! --> const upload 에 수정한것들!!
+// }
+// 해주고 나면 , 같은걸 다시 postman에서 send 보내주면
+// {
+//     "imageUrl": "upload\\product2.jpg"               // 이미지이름이 원래 이름으로 잘 뜸!
+// }
+// (+) client에서 upload폴더의 index.js에서 Upload를 추가하고/ 상품등록하기에서 상품사진을 등록하려고 하면
+// http://localhost:3000/upload\product3.jpg        //경로가 \역슬러시로 떠서 이미지가 액박뜸 --> 이를 수정해줘야함!  + upload폴더 내 사진 이용할 수 있도록 해주기!
+
+
+
 //✔get전송방식
 app.get('/products',async (req,res)=>{              //get으로 요청을 하고 url이 /products이면 함수안에꺼를 요청해줘!!
     //데이터베이스 조회하기
@@ -132,11 +185,59 @@ app.get('/product/:id', async (req, res)=> {
                                         //그래서 localhost:3000/product/2 이렇게나 localhost:3000/product/3 등 주소창에 입력하면 그 값만 뜸!
 });
 
-//✔post 전송방식
-app.post('/green',async (req,res)=>{                //비동기 promise! -> async써서 간편하게!
-    console.log(req);
-    res.send('그린 게시판에 게시글이 등록되었습니다.');
-});
+//✔7.4 post 전송방식
+app.post("/products",(req,res)=>{
+    //http body에 있는 데이터 
+    // *post는 데이터를 달고오는데 header에 담기지 않고 body에 담고!
+    // *post로 전송하면 body에 담김 
+    const body = req.body;
+    //body객체에 있는 값을 각각 변수에 할당
+    const { name, price, seller, imageUrl} = body;
+    if(!name || !price || !seller) {
+        res.send("모든 필드를 입력해주세요");
+    }
+    //모든 입력값이 있으면
+    //Product테이블에 레코드를 삽입
+    //데이터베이스 우린 models를 썼음
+    //create문 --> mysql로 생각하면 insert문임!
+    models.Product.create({
+        name,
+        price,
+        seller,
+        imageUrl
+    }).then(result=>{
+        console.log("상품 생성 결과 : ", result);
+        res.send({
+            result
+        })
+    })
+    .catch(e=>{
+        console.error(e);
+        res.send("상품 업로드에 문제가 생겼습니다.");
+    })
+})
+// 이거 하고 node server.js 서버 연결해준 뒤 postman열자!!(7.4사진참고!)💗
+// 구동되는지 테스트부터 할거! create New -> http request -> request url적어줌!
+// POST  http://localhost:3000/products 이렇게 주소 적어줌!! - body 클릭 - raw - json 클릭 하고 추가할 데이터 적어주기 
+// ex>
+// {
+//     "name": "주방조명",
+//     "price" : 70000,
+//     "seller" : "pink",
+//     "imageUrl" : "/images/products/product1.jpg"
+// }
+// 적어주고 send보내면 보내짐!(밑에 결과창에 보내진 것들이 뜸! + 터미널에도 적힘!!!)
+// 하고나서 로컬디스크C -> Program Files 폴더 클릭 -> DB Browser for SQLite.exe 클릭(C:\Program Files\DB Browser for SQLite) 
+// -> 열림 -> 데이터베이스 열기 -> lamp-shopping-server-main 폴더 열어서 -> database.sqlite3 클릭! -> 데이터 보기 하면 데이터들이 뜨고
+// 추가한 데이터도 생긴걸 볼 수 있음!  --> lamp-shopping-client-main을 npm start 해서 열린 react 에서도 항목에 추가된 걸 볼 수 있다!
+
+
+
+// //✔post 전송방식 (6.30)
+// app.post('/green',async (req,res)=>{                //비동기 promise! -> async써서 간편하게!
+//     console.log(req);
+//     res.send('그린 게시판에 게시글이 등록되었습니다.');
+// });
 
 //🖤실행
 app.listen(port, ()=>{
