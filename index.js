@@ -1,4 +1,4 @@
-//7.4 💕server.js -> index.js로 이름 변경!!!!
+//7.5 💕server.js -> index.js로 이름 변경!!!!
 // https://github.com/design-view/lamp-shopping-server : 선생님 깃허브(lamp-server)
 // 클라이언트가 데이터 요청이 오면 그걸 전달하는 역할이 API 서버의 역할임!!
 // https://semtax.tistory.com/7  : Expressjs에서 JSON Request Body 파싱하기
@@ -6,7 +6,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();      //함수 express()를 실행한 결과 값이 app에 들어감
 // const port = 3000;          //포트번호
-//7.4 헤로쿠에서 포트 지정하는게 있으면 그 번호를 사용
+//7.5 💕헤로쿠에서 포트 지정하는게 있으면 그 번호를 사용
 //없으면 8080포트를 사용
 const port = process.env.PORT || 8080;
 // 7.1
@@ -55,7 +55,9 @@ app.post('/image', upload.single('image'), (req, res)=>{
     res.send({
         // imageUrl: file.path
         //이미지 경로 수정!
-        imageUrl: "http://localhost:3000/"+file.destination+file.filename   
+        // imageUrl: "http://localhost:3000/"+file.destination+file.filename   
+        // 💕7.5 heroku 주소로 변경
+        imageUrl: "https://greenlamp-shopping-server.herokuapp.com/"+file.destination+file.filename   
     })
 })
 // 테스트 해보기(7.4 사진참고) - postman에서 POST  http://localhost:3000/image 경로를 변경함(app.post의 경로인 '/image'!!!!)을 뒤에 적어준거
